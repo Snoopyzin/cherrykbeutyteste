@@ -1166,3 +1166,20 @@ a.produto__midia { cursor: pointer; }
   .faixa__trilho { animation: none; }
   html { scroll-behavior: auto; }
 }
+
+/* ---------- Consultar no WhatsApp ---------- */
+
+.btn--whats {
+  gap: .6rem;
+  background: #1f9d55; color: var(--branco);
+  box-shadow: 0 12px 26px -12px rgba(16, 90, 48, .7);
+}
+.btn--whats:hover { background: #17834a; }
+.btn--whats svg {
+  width: 20px; height: 20px; flex: none;
+  fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linejoin: round;
+}
+
+@media (max-width: 600px) {
+  .btn--whats { letter-spacing: .08em; padding: 0 1.3rem; }
+}

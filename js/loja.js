@@ -3,7 +3,10 @@
    Os dados ficam em js/produtos.js e js/descricoes.js
    ========================================================= */
 (() => {
-  const { pecasMinimas = 20, pecasFaixa2 = 30, valorMinimo = 0, whatsapp } = window.CHERRY_CONFIG;
+  const { pecasMinimas = 20, pecasFaixa2 = 30, valorMinimo = 0, expressMinimo = 0, mensagemConsulta = '' } = window.CHERRY_CONFIG;
+  // aceita o número com ou sem máscara; sem DDI, assume Brasil (55)
+  const digitos = String(window.CHERRY_CONFIG.whatsapp || '').replace(/\D/g, '');
+  const whatsapp = digitos.length === 10 || digitos.length === 11 ? `55${digitos}` : digitos;
   const MARCAS = window.CHERRY_MARCAS;
   const PRODUTOS = window.CHERRY_PRODUTOS;
   const DESCRICOES = window.CHERRY_DESCRICOES || {};
@@ -26,6 +29,14 @@
     el.textContent = valorMinimo > 0 ? `${pecas(pecasMinimas)} e ${moeda(valorMinimo)}` : pecas(pecasMinimas);
   });
   $$('[data-faixa2]').forEach((el) => { el.textContent = pecas(pecasFaixa2); });
+  $$('[data-express-minimo]').forEach((el) => { el.textContent = moeda(expressMinimo); });
+
+  // botão "Atacado Express": abre o WhatsApp com a mensagem pronta
+  if (whatsapp) {
+    $$('[data-whatsapp]').forEach((el) => {
+      el.href = `https://wa.me/${whatsapp}?text=${encodeURIComponent(mensagemConsulta)}`;
+    });
+  }
 
   /* ---------- Ilustração da embalagem (enquanto não há foto) ---------- */
 
@@ -124,7 +135,7 @@
   }
   const salva = () => { try { localStorage.setItem(CHAVE, JSON.stringify(pedido)); } catch { /* sem armazenamento: segue só na sessão */ } };
 
-  // faixa 1: pecasMinimas a pecasFaixa2-1 peças · faixa 2: pecasFaixa2+ (vale para o pedido inteiro)
+  // preço normal: até pecasFaixa2-1 peças · atacado (faixa 2): pecasFaixa2+ (vale para o pedido inteiro)
   const unidades = () => Object.values(pedido).reduce((s, q) => s + q, 0);
   const naFaixa2 = (un = unidades()) => un >= pecasFaixa2;
   const precoAtual = (p, un) => (naFaixa2(un) ? precoFaixa2(p) : p.preco);
@@ -132,6 +143,7 @@
   const totalFaixa1 = () => Object.entries(pedido).reduce((s, [id, q]) => s + produtoPorId[id].preco * q, 0);
   const economiaFaixa2 = () => Object.entries(pedido).reduce((s, [id, q]) => s + (produtoPorId[id].preco - precoFaixa2(produtoPorId[id])) * q, 0);
   const minimoAtingido = () => unidades() >= pecasMinimas && total() >= valorMinimo;
+  const temMinimo = pecasMinimas > 1 || valorMinimo > 0;
 
   function seletorQtd(p, q, extra = '') {
     return `<div class="qtd ${extra}">
@@ -205,12 +217,12 @@
     const un = unidades();
     const faltaMinimo = Math.max(0, pecasMinimas - un);
     const faltaFaixa2 = Math.max(0, pecasFaixa2 - un);
-    if (!naFaixa2(unAntes) && naFaixa2(un)) mostraToast(`Faixa 2 liberada! Todo o pedido ficou ${moeda(economiaFaixa2())} mais barato.`);
-    else if (naFaixa2(unAntes) && !naFaixa2(un)) mostraToast(`O pedido voltou para a faixa 1 (menos de ${pecas(pecasFaixa2)}).`);
-    else if (!minimoAntes && minimoAtingido()) mostraToast(`Pedido mínimo atingido! Com mais ${pecas(faltaFaixa2)} você entra na faixa 2.`);
+    if (!naFaixa2(unAntes) && naFaixa2(un)) mostraToast(`Preço de atacado liberado! Todo o pedido ficou ${moeda(economiaFaixa2())} mais barato.`);
+    else if (naFaixa2(unAntes) && !naFaixa2(un)) mostraToast(`O pedido voltou para o preço normal (menos de ${pecas(pecasFaixa2)}).`);
+    else if (temMinimo && !minimoAntes && minimoAtingido()) mostraToast(`Pedido mínimo atingido! Com mais ${pecas(faltaFaixa2)} você entra no preço de atacado.`);
     else if (!antes && qtd) {
       mostraToast(faltaMinimo ? `Adicionado! Faltam ${pecas(faltaMinimo)} para o pedido mínimo.`
-        : faltaFaixa2 ? `Adicionado! Faltam ${pecas(faltaFaixa2)} para a faixa 2.`
+        : faltaFaixa2 ? `Adicionado! Faltam ${pecas(faltaFaixa2)} para o preço de atacado.`
           : 'Adicionado ao pedido.');
     }
   }
@@ -264,9 +276,9 @@
     botaoCarrinho.setAttribute('aria-label', un ? `Abrir pedido (${pecas(un)})` : 'Abrir pedido');
     document.body.classList.toggle('faixa2-ativa', faixa2);
 
-    // barra vai até a faixa 2; a marca no meio é o pedido mínimo
+    // barra vai até o atacado; a marca no meio é o pedido mínimo (some quando não há mínimo)
     const trilho = barra.parentElement;
-    trilho.style.setProperty('--marca', `${(pecasMinimas / pecasFaixa2) * 100}%`);
+    trilho.style.setProperty('--marca', temMinimo ? `${(pecasMinimas / pecasFaixa2) * 100}%` : '-4px');
     barra.style.width = `${Math.min(100, (un / pecasFaixa2) * 100)}%`;
     trilho.classList.toggle('minimo', ok && !faixa2);
     trilho.classList.toggle('completa', faixa2);
@@ -275,9 +287,9 @@
       const partes = [faltaPecas && `<strong>${pecas(faltaPecas)}</strong>`, faltaValor && `<strong>${moeda(faltaValor)}</strong>`].filter(Boolean).join(' e ');
       textoProgresso.innerHTML = `Faltam ${partes} para o pedido mínimo de ${pecas(pecasMinimas)} (mix livre).`;
     } else if (!faixa2) {
-      textoProgresso.innerHTML = `<strong>Pedido mínimo atingido!</strong> Com mais <strong>${pecas(faltaFaixa2)}</strong> o pedido inteiro passa para a faixa 2 e fica <strong>${moeda(economiaFaixa2())}</strong> mais barato.`;
+      textoProgresso.innerHTML = `${temMinimo ? '<strong>Pedido mínimo atingido!</strong> ' : ''}Com mais <strong>${pecas(faltaFaixa2)}</strong> (mix livre) o pedido inteiro passa para o preço de atacado e fica <strong>${moeda(economiaFaixa2())}</strong> mais barato.`;
     } else {
-      textoProgresso.innerHTML = `<strong>Faixa 2 aplicada!</strong> Todo o pedido está com o preço de ${pecas(pecasFaixa2)} ou mais.`;
+      textoProgresso.innerHTML = `<strong>Preço de atacado aplicado!</strong> Todo o pedido está com o preço de ${pecas(pecasFaixa2)} ou mais.`;
     }
 
     comFoco(lista, () => { lista.innerHTML = itens.map(([id, q]) => itemCarrinho(id, q, un)).join(''); });
@@ -297,13 +309,28 @@
     const itens = Object.entries(pedido);
     if (!itens.length || !minimoAtingido()) return;
     const un = unidades();
+    const t = total(un);
     const linhas = itens.map(([id, q]) => {
       const p = produtoPorId[id];
       const unitario = precoAtual(p, un);
-      return `• ${q}x ${marcaPorId[p.marca].nome} ${p.nome} — ${moeda(unitario)} un. = ${moeda(unitario * q)}`;
+      return `• ${q}x ${marcaPorId[p.marca].nome} ${p.nome}\n   ${moeda(unitario)} un. = *${moeda(unitario * q)}*`;
     });
-    const faixa = naFaixa2(un) ? `faixa 2 (${pecas(pecasFaixa2)} ou mais)` : `faixa 1 (${pecasMinimas} a ${pecasFaixa2 - 1} peças)`;
-    const mensagem = `Olá! Quero fazer um pedido no Atacado Express da Cherry Kbeuty:\n\n${linhas.join('\n')}\n\nTotal de peças: ${un} — ${faixa}\nTotal: ${moeda(total(un))}`;
+    const faixa = naFaixa2(un) ? `preço de atacado, ${pecas(pecasFaixa2)} ou mais` : `preço normal, menos de ${pecas(pecasFaixa2)}`;
+    const eco = naFaixa2(un) ? totalFaixa1() - t : 0;
+    // checkout em texto (o *negrito* é formatação do WhatsApp)
+    const mensagem = [
+      '*Checkout — Cherry Kbeuty*',
+      'Olá! Montei meu pedido no site e quero finalizar:',
+      '',
+      ...linhas,
+      '',
+      `Peças: *${un}* (${faixa})`,
+      eco > 0 && `Economia do atacado: ${moeda(eco)}`,
+      `*Total: ${moeda(t)}*`,
+      expressMinimo > 0 && t >= expressMinimo && `Pedido acima de ${moeda(expressMinimo)}: Atacado Express`,
+      '',
+      'Aguardo a confirmação da disponibilidade e da forma de pagamento.',
+    ].filter((l) => l !== false).join('\n');
     if (!whatsapp) {
       console.warn('Cherry Kbeuty: defina CHERRY_CONFIG.whatsapp em js/produtos.js para receber os pedidos.');
       mostraToast('O envio de pedidos ainda está sendo configurado.');
