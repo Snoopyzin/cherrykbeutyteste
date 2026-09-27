@@ -991,6 +991,11 @@ a.produto__midia { cursor: pointer; }
 .carrinho__total { display: flex; justify-content: space-between; align-items: baseline; }
 .carrinho__total span { font-size: .8rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(74, 10, 22, .7); }
 .carrinho__total strong { font-size: 1.35rem; color: var(--cereja); }
+.carrinho__pagamento {
+  margin: .2rem 0 .7rem;
+  font-size: .74rem; line-height: 1.45;
+  color: var(--cereja-escura); opacity: .85;
+}
 .carrinho__finalizar { width: 100%; }
 .carrinho__finalizar:disabled {
   background: rgba(122, 20, 38, .14); color: rgba(74, 10, 22, .62);

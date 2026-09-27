@@ -329,7 +329,8 @@
       `*Total: ${moeda(t)}*`,
       expressMinimo > 0 && t >= expressMinimo && `Pedido acima de ${moeda(expressMinimo)}: Atacado Express`,
       '',
-      'Aguardo a confirmação da disponibilidade e da forma de pagamento.',
+      'Pagamento: Pix ou cartão em até 3x (taxas do parcelamento por minha conta).',
+      'Aguardo a confirmação da disponibilidade para combinarmos o pagamento.',
     ].filter((l) => l !== false).join('\n');
     if (!whatsapp) {
       console.warn('Cherry Kbeuty: defina CHERRY_CONFIG.whatsapp em js/produtos.js para receber os pedidos.');
