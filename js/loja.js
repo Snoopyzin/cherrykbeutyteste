@@ -121,7 +121,7 @@
         <span class="produto__un">/ un.</span>
       </p>
       <p class="produto__faixa2${f2 < p.preco ? '' : ' produto__faixa2--igual'}">${f2 < p.preco
-        ? `<strong>${moeda(f2)}</strong> a partir de ${pecas(pecasFaixa2)}`
+        ? `<strong>${moeda(f2)}</strong> a partir de ${pecas(pecasFaixa2)} no mix`
         : 'mesmo preço em qualquer volume'}</p>`;
   }
 

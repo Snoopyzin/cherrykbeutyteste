@@ -253,6 +253,13 @@ ul { list-style: none; margin: 0; padding: 0; }
   background: rgba(255, 255, 255, .92);
   box-shadow: 0 10px 24px -14px rgba(74, 10, 22, .6);
 }
+.hero__mix {
+  max-width: 36ch;
+  margin: .8rem auto 0;
+  font-size: .88rem; font-weight: 500; line-height: 1.5;
+  color: var(--cereja-escura);
+}
+.hero__mix strong { color: var(--cereja); }
 .hero__minimo-rotulo {
   font-size: .66rem; font-weight: 700; letter-spacing: .2em; text-transform: uppercase;
   color: var(--cereja);
